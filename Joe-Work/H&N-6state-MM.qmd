@@ -1,7 +1,7 @@
 ---
 title: "Simple H&N Cancer Markov Model"
 author: "Joseph Rickert"
-date: 2025-04-18
+date: 2025-04-20
 description: ""
 image: ""
 image-alt: ""
@@ -11,7 +11,9 @@ code-summary: "Show the code"
 editor: source
 ---
 
-This document presents a very simple Markov model of a patients's progreassion through the states of head and neck cancer treatment. The model is based on a Markov chain with 5 states: Cancer (C), Treatment (T), Follow-up (F), Health (H) and Death (D). The transition probabilities are given in the transition matrix P. The time between transitions is one week.
+This document presents a very simple Markov model of a patient's progression through the states of head and neck cancer treatment. The model is constructed from the patient's point of view and is intended to be used as an aid in making the decision as to whether a patient who has already been diagnosed with head and neck cancer should undergo treatment. The model is structured as a "Negative Utility" model and is based on a Markov chain with six states: Cancer (C), Treatment (T), Follow-up (F), Health (H), No Treatment (NT), and Death (D). Penalties based on medical conditions and adverse effects associated with each state are computed.
+
+The result of the model is an estimate of how long a patient is expected to survive in each health state, along with the expected penalties associated with each state. The model is based on a number of assumptions and simplifications, and should not be used as a substitute for professional medical advice.
 
 
 ```{r}
@@ -29,9 +31,9 @@ library(tidyverse)
 
 ## Survival Data
 
-The following tables come from the paper *Changes in Survival in Hean and Neck Cancers in the Late 20th and Earlt 21st Century: A Period Analysis by [Pulte & Brenner](2010)](https://pmc.ncbi.nlm.nih.gov/articles/PMC3228039/pdf/onc994.pdf)
+The following tables come from the paper *Changes in Survival in Head and Neck Cancers in the Late 20th and Early 21st Century: A Period Analysis by [Pulte & Brenner](2010)](https://pmc.ncbi.nlm.nih.gov/articles/PMC3228039/pdf/onc994.pdf)
 
-The hazzard rate is the probability of dying in a given week. The  probability over all age groups of surviving for 5 years given by Pulte & Brenner is .659. Using this we calculate the hazzard rate and an exponential survival curve.
+The hazard rate is the probability of dying in a given week. The  probability over all age groups of surviving for 5 years given by Pulte & Brenner is .659. Using this we calculate the hazard rate and an exponential survival curve.
 
 ```{r}
 P5Y <- .659
@@ -46,7 +48,7 @@ E_surv <- 1/lambda
 E_surv
 ```
 
-The exponential survival curve shown in the following figure may be used as a rough check on the reasonablness of the transitions probabilities that drive the Markov model below. **We need more than one data point to adequately model transition probabilities.**
+The exponential survival curve shown in the following figure may be used as a rough check on the reasonableness of the transitions probabilities that drive the Markov model below. **We need more than one data point to adequately model transition probabilities.**
 
 ```{r}
 S <- function(t, lambda) {
@@ -140,7 +142,7 @@ N
 
 ### Time to Absorption
 
-Let $t_i$ be the expected number of steps before the chain is absorbed, given that the chain starts in state $s_i$, and let c be acolumn vector whose entries are all 1. Then $t = N \cdot c$.
+Let $t_i$ be the expected number of steps before the chain is absorbed, given that the chain starts in state $s_i$, and let c be column vector whose entries are all 1. Then $t = N \cdot c$.
 
 ```{r}
 #| message: false
@@ -209,6 +211,7 @@ Penalty
 ```
 ### Normalized Penalty for States
 
+The following code normalizes the penalties associated with each health state to the penalty computed for the initial Cancer state. It is intended to convey an idea of the relative intensity of health problems that will persist after treatment, and provide a an aid to a patient who may be considering whether to undergo treatment. The penalties are not intended to be a comprehensive list of all possible adverse effects of treatment, but rather a representative sample of the most common and significant ones.
 ```{r}
 #| message: false
 #| warning: false
@@ -222,7 +225,7 @@ round(cs_n,2)
 
 ## Total Penalty
 
-These are the penalties for each of the states except Death normalized to the penality of the initial Cancer state.
+These are the penalties for each of the states except Death normalized to the penalty of the initial Cancer state. They should useful in constructing utilities that could inform a cost model of the expenses to be incurred in each health state.
 
 ```{r}
 #| message: false
@@ -234,7 +237,7 @@ round(TP,2)
 ```
 
 
-#
+
 
 
 

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Joseph Rickert">
-<meta name="dcterms.date" content="2025-04-18">
+<meta name="dcterms.date" content="2025-04-20">
 
 <title>Simple H&amp;N Cancer Markov Model</title>
 <style>
@@ -100,7 +100,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">April 18, 2025</p>
+      <p class="date">April 20, 2025</p>
     </div>
   </div>
   
@@ -110,12 +110,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<p>This document presents a very simple Markov model of a patients’s progreassion through the states of head and neck cancer treatment. The model is based on a Markov chain with 5 states: Cancer (C), Treatment (T), Follow-up (F), Health (H) and Death (D). The transition probabilities are given in the transition matrix P. The time between transitions is one week.</p>
+<p>This document presents a very simple Markov model of a patient’s progression through the states of head and neck cancer treatment. The model is constructed from the patient’s point of view and is intended to be used as an aid in making the decision as to whether a patient who has already been diagnosed with head and neck cancer should undergo treatment. The model is structured as a “Negative Utility” model and is based on a Markov chain with six states: Cancer (C), Treatment (T), Follow-up (F), Health (H), No Treatment (NT), and Death (D). Penalties based on medical conditions and adverse effects associated with each state are computed.</p>
+<p>The result of the model is an estimate of how long a patient is expected to survive in each health state, along with the expected penalties associated with each state. The model is based on a number of assumptions and simplifications, and should not be used as a substitute for professional medical advice.</p>
 <p><img src="6state.png" class="img-fluid"></p>
 <section id="survival-data" class="level2">
 <h2 class="anchored" data-anchor-id="survival-data">Survival Data</h2>
-<p>The following tables come from the paper *Changes in Survival in Hean and Neck Cancers in the Late 20th and Earlt 21st Century: A Period Analysis by <a href="2010">Pulte &amp; Brenner</a>](https://pmc.ncbi.nlm.nih.gov/articles/PMC3228039/pdf/onc994.pdf)</p>
-<p>The hazzard rate is the probability of dying in a given week. The probability over all age groups of surviving for 5 years given by Pulte &amp; Brenner is .659. Using this we calculate the hazzard rate and an exponential survival curve.</p>
+<p>The following tables come from the paper *Changes in Survival in Head and Neck Cancers in the Late 20th and Early 21st Century: A Period Analysis by <a href="2010">Pulte &amp; Brenner</a>](https://pmc.ncbi.nlm.nih.gov/articles/PMC3228039/pdf/onc994.pdf)</p>
+<p>The hazard rate is the probability of dying in a given week. The probability over all age groups of surviving for 5 years given by Pulte &amp; Brenner is .659. Using this we calculate the hazard rate and an exponential survival curve.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -138,7 +139,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code>[1] 625.1323</code></pre>
 </div>
 </div>
-<p>The exponential survival curve shown in the following figure may be used as a rough check on the reasonablness of the transitions probabilities that drive the Markov model below. <strong>We need more than one data point to adequately model transition probabilities.</strong></p>
+<p>The exponential survival curve shown in the following figure may be used as a rough check on the reasonableness of the transitions probabilities that drive the Markov model below. <strong>We need more than one data point to adequately model transition probabilities.</strong></p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -257,7 +258,7 @@ NT    0 0.000000 0.00    0.0  100</code></pre>
 </section>
 <section id="time-to-absorption" class="level3">
 <h3 class="anchored" data-anchor-id="time-to-absorption">Time to Absorption</h3>
-<p>Let <span class="math inline">\(t_i\)</span> be the expected number of steps before the chain is absorbed, given that the chain starts in state <span class="math inline">\(s_i\)</span>, and let c be acolumn vector whose entries are all 1. Then <span class="math inline">\(t = N \cdot c\)</span>.</p>
+<p>Let <span class="math inline">\(t_i\)</span> be the expected number of steps before the chain is absorbed, given that the chain starts in state <span class="math inline">\(s_i\)</span>, and let c be column vector whose entries are all 1. Then <span class="math inline">\(t = N \cdot c\)</span>.</p>
 <div class="cell">
 <details>
 <summary>Show the code</summary>
@@ -345,6 +346,7 @@ HL 2 8 5 0  0</code></pre>
 </div>
 <section id="normalized-penalty-for-states" class="level3">
 <h3 class="anchored" data-anchor-id="normalized-penalty-for-states">Normalized Penalty for States</h3>
+<p>The following code normalizes the penalties associated with each health state to the penalty computed for the initial Cancer state. It is intended to convey an idea of the relative intensity of health problems that will persist after treatment, and provide a an aid to a patient who may be considering whether to undergo treatment. The penalties are not intended to be a comprehensive list of all possible adverse effects of treatment, but rather a representative sample of the most common and significant ones.</p>
 <div class="cell">
 <details>
 <summary>Show the code</summary>
@@ -361,7 +363,7 @@ HL 2 8 5 0  0</code></pre>
 </section>
 <section id="total-penalty" class="level2">
 <h2 class="anchored" data-anchor-id="total-penalty">Total Penalty</h2>
-<p>These are the penalties for each of the states except Death normalized to the penality of the initial Cancer state.</p>
+<p>These are the penalties for each of the states except Death normalized to the penalty of the initial Cancer state. They should useful in constructing utilities that could inform a cost model of the expenses to be incurred in each health state.</p>
 <div class="cell">
 <details>
 <summary>Show the code</summary>
@@ -373,9 +375,6 @@ HL 2 8 5 0  0</code></pre>
   1.00   4.76   4.01 546.46  13.04 </code></pre>
 </div>
 </div>
-</section>
-<section id="section" class="level1">
-<h1></h1>
 </section>
 
 </main>
