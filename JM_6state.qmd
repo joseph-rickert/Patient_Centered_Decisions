@@ -1,0 +1,334 @@
+---
+title: "Simple H&N Cancer Markov Model"
+author: "Joseph Rickert"
+date: 2025-04-20
+description: ""
+image: ""
+image-alt: ""
+categories: ""
+code-fold: TRUE
+code-summary: "Show the code"
+editor: source
+---
+
+This document presents a very simple Markov model of a patient's progression through the states of head and neck cancer treatment. The model is constructed from the patient's point of view and is intended to be used as an aid in making the decision as to whether a patient who has already been diagnosed with head and neck cancer should undergo treatment. The model is structured as a "Negative Utility" model and is based on a Markov chain with six states: Cancer (C), Treatment (T), Follow-up (F), Health (H), No Treatment (NT), and Death (D). Penalties based on medical conditions and adverse effects associated with each state are computed.
+
+The result of the model is an estimate of how long a patient is expected to survive in each health state, along with the expected penalties associated with each state. The model is based on a number of assumptions and simplifications, and should not be used as a substitute for professional medical advice.
+
+
+```{r}
+#| message: FALSE
+#| warning: FALSE
+#| echo: FALSE
+#| code-fold: TRUE
+#| code-summary: "Show the code"
+library(Matrix)
+library(tidyverse)
+```
+
+
+![](6state.png)
+
+## Survival Data
+
+The following tables come from the paper *Changes in Survival in Head and Neck Cancers in the Late 20th and Early 21st Century: A Period Analysis by [Pulte & Brenner](2010)](https://pmc.ncbi.nlm.nih.gov/articles/PMC3228039/pdf/onc994.pdf)
+
+The hazard rate is the probability of dying in a given week. The  probability over all age groups of surviving for 5 years given by Pulte & Brenner is .659. Using this we calculate the hazard rate and an exponential survival curve.
+
+```{r}
+P5Y <- .659
+lambda <- -log(P5Y) / (5*52.14)
+lambda
+```
+
+The mean survival time in weeks is given by:
+
+```{r}
+E_surv <- 1/lambda
+E_surv
+```
+
+The exponential survival curve shown in the following figure may be used as a rough check on the reasonableness of the transitions probabilities that drive the Markov model below. **We need more than one data point to adequately model transition probabilities.**
+
+```{r}
+S <- function(t, lambda) {
+  exp(-lambda * t)
+}
+
+t <- seq(0, 30*52.14, by = 1)
+
+df <- data.frame(t , S = S(t, lambda))
+ggplot(df, aes(x = t, y = S)) +
+  geom_line() +
+  labs(title = "Exponential Survival Curve", x = "Time (weeks)", y = "Survival Probability") 
+  
+```
+
+
+
+
+
+
+## Transition Matrix
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: TRUE
+#| code-summary: "Show the code"
+states <- c("C", "T", "F", "H", "NT", "D")
+
+p12 = 0.9
+p22 = 0.4
+p23 = 1 - p22
+p33 = 0.6
+p36 = 0.001
+p34 = 1 - (p33 + p36)
+p46 = 0.0005
+p44 = 1 - p46
+p56 = 0.01
+p55 = 1 - p56
+
+P = matrix(c(
+  0.0, p12, 0.0, 0.0, 1-p12, 0.0,
+  0.0, p22, p23, 0.0, 0.0, 0.0,
+  0.0, 0.0, p33, p34, 0.0, p36,
+  0.0, 0.0, 0.0, p44, 0.0, p46,
+  0.0, 0.0, 0.0, 0.0, p55, p56,
+  0.0, 0.0, 0.0, 0.0, 0.0, 1.0
+), nrow = length(states), byrow = TRUE)
+colnames(P) <- states
+rownames(P) <- states
+rowSums(P)
+P
+```
+
+Re-write as two induced systems after the choice of treatment or no-treatment.
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: TRUE
+#| code-summary: "Show the code"
+t_states <- c('T', 'F', 'H', 'D')
+n_states <- c('NT', 'D')
+P_t <- P[t_states, t_states]
+P_n <- P[n_states, n_states]
+```
+
+For the treatment chain.
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: TRUE
+#| code-summary: "Show the code"
+P_t
+```
+
+For the no treatment chain. 
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: TRUE
+#| code-summary: "Show the code"
+P_n
+```
+
+## Markov Chain Characteristics
+
+### Q matrix of Transient States
+
+`Q_*` is the submatrix of `P_*` consisting of the transitive probabilities of transitive states.
+
+For the treatment chain.
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: TRUE
+#| code-summary: "Show the code"
+transient_states <- c("C", "T", "F", "H", "NT")
+Q_t <- P_t[
+  intersect(rownames(P_t), transient_states),
+  intersect(colnames(P_t), transient_states),
+  drop = FALSE]
+  
+Q_t
+```
+
+For the no treatment chain.
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: TRUE
+#| code-summary: "Show the code"
+Q_n <- P_n[
+  intersect(rownames(P_n), transient_states),
+  intersect(colnames(P_n), transient_states),
+  drop = FALSE]
+  
+Q_n
+
+
+```
+
+### Fundamental Matrix, N
+
+The entry $n_{ij}$ of N gives the expected number
+of times that the process will visit the transient state $s_j$ if it is started in the transient state $s_i$. For a discrete time Markov chain where the basic time between transitions is one week, then $n_{ij}$ may also be interpreted as the expected number of days that the process will spend in state $s_j$ if it is started in state $s_i$.
+
+For the treatment chain.
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: TRUE
+#| code-summary: "Show the code"
+I_t = diag(nrow(Q_t))
+N_t = solve(I_t - Q_t)
+N_t
+```
+
+For the no treatment chain.
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: TRUE
+#| code-summary: "Show the code"
+I_n = diag(nrow(Q_n))
+N_n = solve(I_n - Q_n)
+N_n
+```
+
+### Time to Absorption
+
+Let $t_i$ be the expected number of steps before the chain is absorbed, given that the chain starts in state $s_i$, and let c be column vector whose entries are all 1. Then $t = N \cdot c$.
+
+For the treatment chain.
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: TRUE
+#| code-summary: "Show the code"
+
+t_t <- N_t %*% rep(1, ncol(N_t))
+# rowSums(N) # alternate calculation
+t_t
+```
+
+For the no treatment chain.
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: TRUE
+#| code-summary: "Show the code"
+t_n <- N_n %*% rep(1, ncol(N_n))
+# rowSums(N) # alternate calculation
+t_n
+```
+
+### Expected Time in Each State
+
+This is the expected time in each state measured in weeks when the chain starts in state 1.
+
+For the treatment chain.
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: TRUE
+#| code-summary: "Show the code"
+cat(" Weeks:", round(N_t[1,],2), "\n",
+    "Years:", round(N_t[1,] / 52.14,2))
+```
+
+For the no treatment chain.
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: TRUE
+#| code-summary: "Show the code"
+cat(" Weeks:", round(N_n[1,],2), "\n",
+    "Years:", round(N_n[1,] / 52.14,2))
+```
+
+## Stoped changes here
+
+## Utility Calculations
+
+## Adverse Events
+The following are adverse effects of head and neck cancer treatment are based on [MacMillan Cancer Support](https://www.macmillan.org.uk/cancer-information-and-support/impacts-of-cancer/late-effects-of-head-and-neck-cancer-treatments):
+
+1.  H - Hospitalization 
+2.  PN - pain or numbness
+3.  L - lymphoedema
+4.  S - feeling sick
+5.  T - tiredness
+6.  DW - difficulty swallowing
+7.  DS - difficulty speaking
+8.  MT - missing teeth
+9.  NS - neck shoulder stiffness
+10. HL - hearing loss
+
+
+
+
+```
+#| message: false
+#| warning: false
+#| code-fold: TRUE
+#| code-summary: "Show the code"
+Penalty<-matrix(c(5,9,0,0,1,
+                  0,0,5,1,3,
+                  0,7,5,1,2,
+                  2,9,5,1,7,
+                  4,8,1,1,7,
+                  4,8,5,1,5,
+                  4,8,5,1,4,
+                  2,8,5,0,0,
+                  0,8,5,1,1,
+                  2,8,5,0,0
+                  ), nrow = 10, byrow = TRUE)
+rownames(Penalty) <- c("H", "PN", "L", "S", "T", "DW", "DS", "MT", "NS", "HL")
+colnames(Penalty) <- states_Q
+Penalty
+```
+### Normalized Penalty for States
+
+The following code normalizes the penalties associated with each health state to the penalty computed for the initial Cancer state. It is intended to convey an idea of the relative intensity of health problems that will persist after treatment, and provide a an aid to a patient who may be considering whether to undergo treatment. The penalties are not intended to be a comprehensive list of all possible adverse effects of treatment, but rather a representative sample of the most common and significant ones.
+
+```
+#| message: false
+#| warning: false
+#| code-fold: TRUE
+#| code-summary: "Show the code"
+cs <- colSums(Penalty)
+cs_n <- cs/cs[1]
+round(cs_n,2)
+```
+
+
+## Total Penalty
+
+These are the penalties for each of the states except Death normalized to the penalty of the initial Cancer state. They should useful in constructing utilities that could inform a cost model of the expenses to be incurred in each health state.
+
+```
+#| message: false
+#| warning: false
+#| code-fold: TRUE
+#| code-summary: "Show the code"
+TP <- N[1,] * cs_n
+round(TP,2)
+```
+
+
+
+
+
+
+
