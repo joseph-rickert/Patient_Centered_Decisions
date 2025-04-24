@@ -49,8 +49,8 @@ plot_transition_graph <- function(){
 # )
 STATE <- c(
   'Cancer'='C', 
-  'State around treatment immediately following surgery'='T',
-  'Followup period, including radiation and chemotherapy'='F',
+  'Treatment immediately following surgery'='T',
+  'Followup period'='F', # including radiation and chemotherapy
   'Health'='H',
   'Not Treated'='NT',
   'Death'='D'
@@ -288,11 +288,10 @@ server <- function(input, output, session) {
   )
   observe({
     output$debug_message <- renderText(input$state)
-    my_state_name <- 'C' # input$state # 'C'
-    message(input$state)
+    my_state <- input$state # 'C'
     for (my_ae in names(AEs)){
       my_slider <- paste0('ae_', my_ae)
-      updateSelectInput(session, my_slider, selected=PENALTY[my_ae, my_state_name])
+      updateSelectInput(session, my_slider, selected=PENALTY[my_ae, my_state])
     }
   })
 }
