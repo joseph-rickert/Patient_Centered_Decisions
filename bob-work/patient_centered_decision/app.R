@@ -106,17 +106,9 @@ rownames(T) <- STATE
 
 ui = fluidPage(
   tabsetPanel(
-    tabPanel("Introduction",
-        fluidPage(
-          # tags$iframe(src=DOC_URL, height=1200, width=800) # 
-          # includeHTML('HandN_6state_MM.html') # H&N-6state-MM.html'
-          # includeHTML('Simple_HandN.html') # Doesn't work if there are self-contained images?
-          h1("Put documentation here")
-        )
-    ),
-    
+
     tabPanel(
-      "Transition Graph",
+      "Documentation",
       fluidPage(
         plotOutput("transition_graph_plot"),
         p("This diagram shows the state transitions:"),
@@ -124,7 +116,16 @@ ui = fluidPage(
       )
     ),
     
-    tabPanel("Adverse Events",
+    tabPanel(
+      "Penalty Matrix",
+      fluidPage( 
+        h2("Adverse event penalties for each state"), 
+        tableOutput("penalty_table")
+      )
+    ),
+    
+    tabPanel(
+      "Adverse Events",
       sidebarLayout(
         sidebarPanel(
          selectInput("state", "State", STATE[1:4]) # , width=4
@@ -164,24 +165,6 @@ ui = fluidPage(
         fluid=TRUE
        )
     ),
-    
-    tabPanel(
-      "Penalty Matrix",
-      fluidPage( 
-        h2("Adverse event penalties for each state"), 
-        tableOutput("penalty_table")
-      )
-    ),
-    
-    # aspect_min_max <- list(
-    #   "Mobility"=c('no problems walking about', 'confined to bed'),
-    #   "Self care"=c('no problems with self-care', 'unable to wash or dress myself'),
-    #   "Usual activities"=c('no problems doing my usual activitie', 'unable to do my usual activities'),
-    #   "Pain/discomfort"=c('no pain or discomfort', 'extreme pain or discomfort'),
-    #   "Anxiety/depression"=c('not anxious or depressed', 'extremely anxious or depressed')
-    # )
-
-
     
     tabPanel("EQ-5D", fluid = FALSE,
         sidebarPanel(
@@ -279,7 +262,7 @@ server <- function(input, output, session) {
   )
   
   # Show the table of different states
-  output$state_table <- renderTable(tibble(node=STATE, description=STATE))
+  output$state_table <- renderTable(tibble(node=STATE, description=names(STATE)))
   
   # Display the PENALTY matrix
   output$penalty_table <- renderTable(
