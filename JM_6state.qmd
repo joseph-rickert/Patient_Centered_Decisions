@@ -276,58 +276,77 @@ The following are adverse effects of head and neck cancer treatment are based on
 10. HL - hearing loss
 
 
+The followwing table assigns a penalty to each state. The penalty is a measure of the severity of the adverse effect associated with each state. The penalties are not intended to be a comprehensive list of all possible adverse effects of treatment, but rather a representative sample of the most common and significant ones. The scale goes from 0 (no penalty) tp 9 maximum penalty. Currently the penalties are based on a best guess and have not yet been informed by the literature.
 
-
+```{r}
+Penalty <- c(8,5,4,5,6,7,6,3,4,3)
+names(Penalty) <- c("H", "PN", "L", "S", "T", "DW", "DS", "MT", "NS", "HL")
+Penalty
 ```
+
+The following table assigns a probability for experiencing a particular penalty in each state.
+
+```{r}
 #| message: false
 #| warning: false
 #| code-fold: TRUE
 #| code-summary: "Show the code"
-Penalty<-matrix(c(5,9,0,0,1,
-                  0,0,5,1,3,
-                  0,7,5,1,2,
-                  2,9,5,1,7,
-                  4,8,1,1,7,
-                  4,8,5,1,5,
-                  4,8,5,1,4,
-                  2,8,5,0,0,
-                  0,8,5,1,1,
-                  2,8,5,0,0
+Probs<-matrix(c(.1,.9,.5,.05,.9,
+                  .4,.8,.5,.4,.9,
+                  .01,.9,.1,.4,.9,
+                  .9,.9,.8,.2,.9,
+                  .8,.8,.4,.9,.9,
+                  .5,.5,.5,.1,.6,
+                  .5,.5,.5,.1,.6,
+                  .01,.5,.5,.5,0,
+                  .01,.5,.5,.5,.5,
+                  .01,.5,.5,.5,.5 
                   ), nrow = 10, byrow = TRUE)
-rownames(Penalty) <- c("H", "PN", "L", "S", "T", "DW", "DS", "MT", "NS", "HL")
-colnames(Penalty) <- states_Q
-Penalty
+rownames(Probs) <- c("H", "PN", "L", "S", "T", "DW", "DS", "MT", "NS", "HL")
+colnames(Probs) <- transient_states 
+Probs
 ```
 ### Normalized Penalty for States
 
 The following code normalizes the penalties associated with each health state to the penalty computed for the initial Cancer state. It is intended to convey an idea of the relative intensity of health problems that will persist after treatment, and provide a an aid to a patient who may be considering whether to undergo treatment. The penalties are not intended to be a comprehensive list of all possible adverse effects of treatment, but rather a representative sample of the most common and significant ones.
 
-```
+```{r}
 #| message: false
 #| warning: false
 #| code-fold: TRUE
 #| code-summary: "Show the code"
-cs <- colSums(Penalty)
+suffering <- Probs * Penalty
+cs <- colSums(suffering)
 cs_n <- cs/cs[1]
 round(cs_n,2)
 ```
 
 
-## Total Penalty
+## Total Penalty Treatment
 
 These are the penalties for each of the states except Death normalized to the penalty of the initial Cancer state. They should useful in constructing utilities that could inform a cost model of the expenses to be incurred in each health state.
 
-```
+```{r}
 #| message: false
 #| warning: false
 #| code-fold: TRUE
 #| code-summary: "Show the code"
-TP <- N[1,] * cs_n
-round(TP,2)
+T_t <- N_t[1,] * cs_n[1:4]
+round(T_t,2)
 ```
 
 
 
+## Total Penalty No Treatment
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: TRUE
+#| code-summary: "Show the code"
+T_n <- N_n[1,] * cs_n[5]
+round(T_n,2)
+```
 
 
 
