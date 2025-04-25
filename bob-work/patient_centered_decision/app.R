@@ -39,14 +39,6 @@ plot_transition_graph <- function(){
   plot(g)
 }
 
-# STATE <- c(
-#   C='Cancer'='C', 
-#   T='State around treatment immediately following surgery'='T',
-#   F='Followup period, including radiation and chemotherapy'='F',
-#   H='Health'='H',
-#   NT='Not Treated'='NT',
-#   D='Death'='d'
-# )
 STATE <- c(
   'Cancer'='C', 
   'Treatment immediately following surgery'='T',
@@ -119,9 +111,7 @@ ui = fluidPage(
           # tags$iframe(src=DOC_URL, height=1200, width=800) # 
           # includeHTML('HandN_6state_MM.html') # H&N-6state-MM.html'
           # includeHTML('Simple_HandN.html') # Doesn't work if there are self-contained images?
-          h1("Put documentation here"),
-          h3("Debug messages:"),
-          textOutput("debug_messages")
+          h1("Put documentation here")
         )
     ),
     
@@ -137,7 +127,7 @@ ui = fluidPage(
     tabPanel("Adverse Events",
       sidebarLayout(
         sidebarPanel(
-         selectInput("state", "State", STATE, width=2)
+         selectInput("state", "State", STATE[1:4]) # , width=4
         ),
         mainPanel(
          sliderInput("ae_H", "Hospitalization", 
@@ -270,30 +260,128 @@ ui = fluidPage(
 
 ae_slider_names <- setNames(paste('ae', names(AEs), sep='_'), nm=names(AEs))
 
+get_penalty_dataframe <- function(){
+  as.data.frame(
+    bind_cols(
+      data.frame(
+        aspect=dimnames(PENALTY)[[1]],
+        description=AEs[dimnames(PENALTY)[[1]]]
+      ), 
+      as.data.frame(PENALTY)
+    )
+  )
+}
+
 server <- function(input, output, session) {
+  # Show the plot of the transition graph
   output$transition_graph_plot <- renderPlot(
     plot_transition_graph()
   )
+  
+  # Show the table of different states
   output$state_table <- renderTable(tibble(node=STATE, description=STATE))
+  
+  # Display the PENALTY matrix
   output$penalty_table <- renderTable(
-    as.data.frame(
-      bind_cols(
-        data.frame(
-          aspect=dimnames(PENALTY)[[1]],
-          description=AEs[dimnames(PENALTY)[[1]]]
-        ), 
-        as.data.frame(PENALTY)
-      )
-    )
+    get_penalty_dataframe()
   )
+  
+  # Copy PENALTY matrix values to sliders
   observe({
-    output$debug_message <- renderText(input$state)
     my_state <- input$state # 'C'
     for (my_ae in names(AEs)){
       my_slider <- paste0('ae_', my_ae)
       updateSelectInput(session, my_slider, selected=PENALTY[my_ae, my_state])
     }
   })
+  
+  # Update matrix with slider values
+  
+  ## This works:
+  # ae_name <- 'L'
+  # slider_name <- paste("ae", ae_name, sep='_')
+  # observeEvent(input[[slider_name]], { 
+  #   message(slider_name)
+  #   PENALTY[ae_name, input$state] <<- input[[slider_name]]
+  #   output$penalty_table <- renderTable(
+  #     get_penalty_dataframe()
+  #   )
+  # })
+  
+  ## This does not work:
+  # observeEvent(input[[slider_name]], { 
+  #   ae_name <- 'L'
+  #   slider_name <- paste("ae", ae_name, sep='_')
+  #   # message(slider_name)
+  #   PENALTY[ae_name, input$state] <<- input[[slider_name]]
+  #   output$penalty_table <- renderTable(
+  #     get_penalty_dataframe()
+  #   )
+  # })
+
+  # "H"  "PN" "L"  "S"  "T"  "DW" "DS" "MT" "NS" "HL"
+  # This does not work
+  # for (ae_name in names(AEs)){
+  #   slider_name <- paste("ae", ae_name, sep='_')
+  #   observeEvent(input[[slider_name]], { 
+  #     PENALTY[ae_name, input$state] <<- input[[slider_name]]
+  #     output$penalty_table <- renderTable(
+  #       get_penalty_dataframe()
+  #     )
+  #   })
+  # }
+  
+  ## This works:
+  observeEvent(input$ae_H, {
+    PENALTY['H', input$state] <<- input$ae_H
+    output$penalty_table <- renderTable( get_penalty_dataframe() )
+  })
+
+  observeEvent(input$ae_PN, {
+    PENALTY['PN', input$state] <<- input$ae_PN
+    output$penalty_table <- renderTable( get_penalty_dataframe() )
+  })
+  
+  observeEvent(input$ae_L, {
+    PENALTY['L', input$state] <<- input$ae_L
+    output$penalty_table <- renderTable( get_penalty_dataframe() )
+  })
+  
+  observeEvent(input$ae_S, {
+    PENALTY['S', input$state] <<- input$ae_S
+    output$penalty_table <- renderTable( get_penalty_dataframe() )
+  })
+  
+  observeEvent(input$ae_T, {
+    PENALTY['T', input$state] <<- input$ae_T
+    output$penalty_table <- renderTable( get_penalty_dataframe() )
+  })
+  
+  observeEvent(input$ae_DW, {
+    PENALTY['DW', input$state] <<- input$ae_DW
+    output$penalty_table <- renderTable( get_penalty_dataframe() )
+  })
+  
+  observeEvent(input$ae_DS, {
+    PENALTY['DS', input$state] <<- input$ae_DS
+    output$penalty_table <- renderTable( get_penalty_dataframe() )
+  })
+  
+  observeEvent(input$ae_MT, {
+    PENALTY['MT', input$state] <<- input$ae_MT
+    output$penalty_table <- renderTable( get_penalty_dataframe() )
+  })
+  
+  observeEvent(input$ae_NS, {
+    PENALTY['NS', input$state] <<- input$ae_NS
+    output$penalty_table <- renderTable( get_penalty_dataframe() )
+  })
+  
+  observeEvent(input$ae_HL, {
+    PENALTY['HL', input$state] <<- input$ae_HL
+    output$penalty_table <- renderTable( get_penalty_dataframe() )
+  })
+  
 }
 
 shinyApp(ui, server, options=list(height=1000, width=1600))
