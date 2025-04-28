@@ -1,0 +1,116 @@
+---
+title: "Patient centered decision model notes"
+author: "Bob"
+date: "2025-04-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Ioannidis 2011
+
+Examples where ICER does not capture the personal decision (from Ioannidis 2011):
+
+* Side effect reducing QALY:
+"[C]onsider two medicines that treat the common cold. One of them reduces the average duration of the cold by three days, while the other reduces the average duration by four days, but on average the second one also causes one day of headache as a side effect. As it happens, the headaches are no better or worse than having a cold. From the patient’s point of view, both drugs decrease the duration of symptomatic illness by three days, with no meaningful difference between them."
+
+* Rare severe side effects:
+"[S]uppose one intervention reduces the duration of the cold by an extra day relative to the other treatment, but on rare occasions it causes side effects that are either severe or prolonged, so the net effect on health is identical, on average. Then, some patients might reasonably decide that they would prefer the drug that is less effective most of the time, rather than risk the small possibility of becoming very ill if they were unlucky enough to experience the major side effect."
+
+* Rare strong positive effect:
+"[C]onsider one intervention that improves outcomes in a few very sick patients who would die otherwise, but can live good-quality lives with treatment; both the benefits and the costs are very large. Another intervention has an equally favorable ICER, but it confers very small benefits to many individuals who are not very sick at baseline, with little cost per person. In many circumstances, the former intervention would be favored."
+
+* Risk aversion:
+"[S]uppose that two surgical interventions have the same ICER of \$25,000/QALY. One operation costs \$50,000 and confers 2.1 QALYs of benefit against 0.1 QALYs of harms due to a manageable problem that stems from the surgery. Another more aggressive procedure also costs \$50,000 but confers 2.3 QALYs of benefit and, on average, 0.3 QALY of expected harm: 99% of the patients get no harm, but 1% die during the surgery and lose 30 years of life. Even though both operations have the same ICER, risk-averse patients may prefer to avoid the aggressive surgery."
+
+* Landmark event:
+a patient with late-stage metastatic cancer may wish to live until a landmark date, e.g., her daughter’s wedding. The value of additional days of life may decline sharply after the landmark event.
+
+## Personalized medicine
+
+Are there identifiable subgroups with characteristics that explain variability in outcomes and costs? If well-validated prognostic models are available or studies supporting specific subgroup classifications, cost–utility information can be individualized by level of predicted risk and subgroup.
+
+
+## Communicating uncertainty
+
+May make use of "online supplements"
+
+* mean/median with standard deviation or interquartile range.
+
+* Kaplan-Meier plots
+
+* Utility or quality weights plotted over time, with expected mean and variance.
+
+===
+
+Goals for Shiny App for Patient-level Decision:
+
+We want this to be simple enough that we can put it together quickly and get feedback, but complete enough to illustrate a range of concepts.
+
+Main goals:
+* Specify a cost model; for a fully insured patient this may not include financial costs at all. Here I assume the patient cost will be predominantly having to undergo experiences they do not want to undergo (I'm calling these aversion costs).
+* Decompose penalties into aversion (the patient's opinion of how much a given aspect or adverse event would bother them) and probabilities (presumable from the physician). Do this is a way that allows them to be re-combined later (e.g., by matrix multiplication).
+* The app should have separate tabs for editing aversion scores and probabilities (e.g., with sliders), representing the idea that these inputs will come from different people.
+* Run simulations (deterministic or stochastic) based on these inputs and predict the net incremental benefit (payoff) of treatment vs. no treatment. The decision can be built in; that is, we compute the payoffs for both treated and untreated branches, and take the difference.
+* Display the results.
+
+Bonus points for:
+* Including uncertainty (e.g., probabilities might be specified as a 95% credible interval using double-ended sliders).
+* Visualizing uncertainty (in outputs as well as inputs).
+* Capturing patient preferences in a simple and general panel of scores.
+* Having results easily and promptly visible as the input sliders are tweaked.
+* Using a utility model that can be extended to combine financial and aversion costs.
+* Having examples where different inputs would lead to dramatically different payoffs / decisions.
+* Demonstrating any of the categories of patient-specific decisions described by Ioannidis 2011:
+  - Side effect reducing quality of life (time toxicity might fit here)
+  - Risk aversion
+    + Rare severe side effects
+    + Rare strong positive effect
+  - Landmark event (e.g., daughter’s wedding)
+
+===
+
+App as ongoing survey.
+
+===
+
+Time toxicity
+
+* “Patients with cancer spend an enormous amount of time engaging with the health care system, and for patients with advanced cancer in particular, that time is precious,” - [Ronac Mamtani, MD](https://www.pennmedicine.org/news/news-releases/2025/february/text-message-tool-addresses-time-toxicity-for-cancer-patients)
+* [Evaluating the Time Toxicity of Cancer Treatment](https://pmc.ncbi.nlm.nih.gov/articles/PMC10337749/) through secondary analyses of RCTs
+* [The Time Toxicity of Cancer Treatment](https://ascopubs.org/doi/10.1200/JCO.21.02810) ".. the loss of time incurred receiving ... treatments may offset modest survival gains offered by treatment". Home Days as a Metric.
+
+Decision fatigue
+
+* [What doctors wish patients knew about decision fatigue](https://www.ama-assn.org/delivering-care/public-health/what-doctors-wish-patients-knew-about-decision-fatigue#) (you make worse decisions when you are tired of deciding =?=> front load important decisions)
+
+
+End of life issues
+
+* [Google AI summary](https://www.google.com/search?q=end+of+life+issues+in+healthcare)
+* [Financial planning checklist](https://smartasset.com/taxes/end-of-life-financial-planning-checklist)
+
+
+Communicating probabilities
+
+* [Google AI summary](https://www.google.com/search?q=Communicating+probabilities)
+
+
+===
+
+Effective age: Can we frame your risk of dying as comparable to a healthy person who is older?
+
+* [Effective age in health](https://www.google.com/search?q=Effective+age+in+health)
+(NOT "Effective age in healthcare"!)
+* David Spiegelhalter [How old are you, really? Communicating chronic risk through ‘effective age’ of your body and organs](https://pmc.ncbi.nlm.nih.gov/articles/PMC4974726/pdf/12911_2016_Article_342.pdf) 2016.
+
+
+Articles by David Spiegelhalter:
+
+* [Simple and multistate survival curves: can people learn to use them?](https://pubmed.ncbi.nlm.nih.gov/22753419/)
+* [Understanding Uncertainty](https://pmc.ncbi.nlm.nih.gov/articles/PMC2384984/pdf/0060196.pdf) 2008.
+* [The pros and cons of funnel plots as an aid to risk communication and patient decision making](https://pubmed.ncbi.nlm.nih.gov/25123852/)
+* [Bicycle helmets and the law](https://core.ac.uk/reader/13117736) 2013. "We both dread questions about bicycle helmets." Winton professor for the public understanding of risk.
+
